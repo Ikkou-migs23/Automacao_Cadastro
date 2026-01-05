@@ -1,4 +1,4 @@
-![Video Cut](https://img.shields.io/badge/Video%20Cut-v1.0-blue.svg)
+![Automacao_Cadastro](https://img.shields.io/badge/Automacao_Cadastro-v1.0-blue.svg)
 ![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow.svg)
