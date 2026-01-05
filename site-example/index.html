@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP Master - Gestão Integrada </title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .active-nav { background-color: #374151; border-left: 4px solid #3b82f6; }
+        .fade-in { animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // Componente de Ícone Simples
+        const Icon = ({ name }) => {
+            const icons = {
+                dashboard: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+                users: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>,
+                box: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
+                sale: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+            };
+            return icons[name] || null;
+        };
+
+        const App = () => {
+            const [view, setView] = useState('dashboard');
+            const [clients, setClients] = useState([]);
+            const [products, setProducts] = useState([]);
+            const [sales, setSales] = useState([]);
+            const [notif, setNotif] = useState(null);
+
+            const notify = (text) => {
+                setNotif(text);
+                setTimeout(() => setNotif(null), 3000);
+            };
+
+            // Totais para o Dashboard
+            const stats = useMemo(() => ({
+                clients: clients.length,
+                products: products.length,
+                sales: sales.length,
+                revenue: sales.reduce((acc, curr) => acc + parseFloat(curr.total), 0).toFixed(2)
+            }), [clients, products, sales]);
+
+            // Handlers de Cadastro
+            const addClient = (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const newClient = {
+                    id: Date.now(),
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    phone: formData.get('phone')
+                };
+                setClients([...clients, newClient]);
+                e.target.reset();
+                notify("Cliente cadastrado com sucesso!");
+            };
+
+            const addProduct = (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const newProduct = {
+                    id: Date.now(),
+                    name: formData.get('name'),
+                    price: formData.get('price'),
+                    stock: formData.get('stock')
+                };
+                setProducts([...products, newProduct]);
+                e.target.reset();
+                notify("Produto adicionado ao estoque!");
+            };
+
+            const addSale = (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const productId = formData.get('productId');
+                const clientId = formData.get('clientId');
+                const qty = parseInt(formData.get('qty'));
+
+                const product = products.find(p => p.id == productId);
+                const client = clients.find(c => c.id == clientId);
+
+                if (!product || !client) return notify("Selecione cliente e produto!");
+
+                const total = (parseFloat(product.price) * qty).toFixed(2);
+                const newSale = {
+                    id: Date.now(),
+                    clientName: client.name,
+                    productName: product.name,
+                    qty,
+                    total,
+                    date: new Date().toLocaleDateString()
+                };
+
+                setSales([...sales, newSale]);
+                e.target.reset();
+                notify("Venda registrada!");
+            };
+
+            return (
+                <div className="flex h-screen">
+                    {/* Sidebar */}
+                    <aside className="w-64 bg-gray-800 text-white flex flex-col">
+                        <div className="p-6 text-2xl font-bold border-b border-gray-700">ERP Master</div>
+                        <nav className="flex-1 mt-4">
+                            <NavItem active={view === 'dashboard'} onClick={() => setView('dashboard')} icon="dashboard" label="Dashboard" />
+                            <NavItem active={view === 'clients'} onClick={() => setView('clients')} icon="users" label="Clientes" />
+                            <NavItem active={view === 'products'} onClick={() => setView('products')} icon="box" label="Produtos" />
+                            <NavItem active={view === 'sales'} onClick={() => setView('sales')} icon="sale" label="Vendas" />
+                        </nav>
+                    </aside>
+
+                    {/* Main Content */}
+                    <main className="flex-1 flex flex-col overflow-hidden">
+                        {/* Top Bar */}
+                        <header className="bg-white shadow p-4 flex justify-between items-center">
+                            <h2 className="text-xl font-semibold text-gray-700 capitalize">{view}</h2>
+                            <div className="text-sm text-gray-500">Usuário: Admin</div>
+                        </header>
+
+                        {/* View Content */}
+                        <div className="flex-1 overflow-y-auto p-6 bg-gray-100">
+                            {notif && (
+                                <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded shadow-lg fade-in z-50">
+                                    {notif}
+                                </div>
+                            )}
+
+                            {view === 'dashboard' && (
+                                <div className="fade-in space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                        <StatCard label="Clientes" value={stats.clients} color="blue" />
+                                        <StatCard label="Produtos" value={stats.products} color="green" />
+                                        <StatCard label="Vendas" value={stats.sales} color="purple" />
+                                        <StatCard label="Receita Total" value={`R$ ${stats.revenue}`} color="yellow" />
+                                    </div>
+                                    <div className="bg-white p-6 rounded-lg shadow">
+                                        <h3 className="text-lg font-bold mb-4">Atividade Recente</h3>
+                                        <p className="text-gray-500">Comece a cadastrar para ver as métricas aqui.</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {view === 'clients' && (
+                                <div className="fade-in grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    <div className="lg:col-span-1 bg-white p-6 rounded-lg shadow h-fit">
+                                        <h3 className="text-lg font-bold mb-4">Novo Cliente</h3>
+                                        <form onSubmit={addClient} className="space-y-4">
+                                            <Input name="name" label="Nome Completo" required />
+                                            <Input name="email" label="E-mail" type="email" required />
+                                            <Input name="phone" label="Telefone" required />
+                                            <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 font-medium transition">Salvar Cliente</button>
+                                        </form>
+                                    </div>
+                                    <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow">
+                                        <h3 className="text-lg font-bold mb-4">Lista de Clientes</h3>
+                                        <Table headers={['Nome', 'E-mail', 'Telefone']}>
+                                            {clients.map(c => (
+                                                <tr key={c.id} className="border-t">
+                                                    <td className="p-3">{c.name}</td>
+                                                    <td className="p-3">{c.email}</td>
+                                                    <td className="p-3">{c.phone}</td>
+                                                </tr>
+                                            ))}
+                                        </Table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {view === 'products' && (
+                                <div className="fade-in grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    <div className="lg:col-span-1 bg-white p-6 rounded-lg shadow h-fit">
+                                        <h3 className="text-lg font-bold mb-4">Novo Produto</h3>
+                                        <form onSubmit={addProduct} className="space-y-4">
+                                            <Input name="name" label="Nome do Produto" required />
+                                            <Input name="price" label="Preço (R$)" type="number" step="0.01" required />
+                                            <Input name="stock" label="Qtd. Estoque" type="number" required />
+                                            <button className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 font-medium transition">Adicionar Produto</button>
+                                        </form>
+                                    </div>
+                                    <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow">
+                                        <h3 className="text-lg font-bold mb-4">Estoque Atual</h3>
+                                        <Table headers={['Produto', 'Preço', 'Estoque']}>
+                                            {products.map(p => (
+                                                <tr key={p.id} className="border-t">
+                                                    <td className="p-3 font-medium">{p.name}</td>
+                                                    <td className="p-3">R$ {p.price}</td>
+                                                    <td className="p-3">{p.stock} un</td>
+                                                </tr>
+                                            ))}
+                                        </Table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {view === 'sales' && (
+                                <div className="fade-in grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    <div className="lg:col-span-1 bg-white p-6 rounded-lg shadow h-fit">
+                                        <h3 className="text-lg font-bold mb-4">Registrar Venda</h3>
+                                        <form onSubmit={addSale} className="space-y-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Cliente</label>
+                                                <select name="clientId" className="mt-1 w-full border rounded p-2 bg-gray-50 focus:ring-2 focus:ring-purple-500 outline-none" required>
+                                                    <option value="">Selecione...</option>
+                                                    {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Produto</label>
+                                                <select name="productId" className="mt-1 w-full border rounded p-2 bg-gray-50 focus:ring-2 focus:ring-purple-500 outline-none" required>
+                                                    <option value="">Selecione...</option>
+                                                    {products.map(p => <option key={p.id} value={p.id}>{p.name} (R$ {p.price})</option>)}
+                                                </select>
+                                            </div>
+                                            <Input name="qty" label="Quantidade" type="number" min="1" required defaultValue="1" />
+                                            <button className="w-full bg-purple-600 text-white py-2 rounded hover:bg-purple-700 font-medium transition">Confirmar Venda</button>
+                                        </form>
+                                    </div>
+                                    <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow">
+                                        <h3 className="text-lg font-bold mb-4">Relatório de Vendas</h3>
+                                        <Table headers={['Data', 'Cliente', 'Produto', 'Qtd', 'Total']}>
+                                            {sales.map(s => (
+                                                <tr key={s.id} className="border-t">
+                                                    <td className="p-3 text-sm text-gray-500">{s.date}</td>
+                                                    <td className="p-3 font-medium">{s.clientName}</td>
+                                                    <td className="p-3">{s.productName}</td>
+                                                    <td className="p-3">{s.qty}</td>
+                                                    <td className="p-3 text-green-600 font-bold">R$ {s.total}</td>
+                                                </tr>
+                                            ))}
+                                        </Table>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        // Componentes Auxiliares
+        const NavItem = ({ icon, label, onClick, active }) => (
+            <button 
+                onClick={onClick}
+                className={`w-full flex items-center gap-4 px-6 py-4 transition-colors ${active ? 'active-nav' : 'hover:bg-gray-700'}`}
+            >
+                <Icon name={icon} />
+                <span className="font-medium">{label}</span>
+            </button>
+        );
+
+        const StatCard = ({ label, value, color }) => {
+            const colors = {
+                blue: 'border-blue-500 text-blue-600',
+                green: 'border-green-500 text-green-600',
+                purple: 'border-purple-500 text-purple-600',
+                yellow: 'border-yellow-500 text-yellow-600'
+            };
+            return (
+                <div className={`bg-white p-6 rounded-lg shadow border-b-4 ${colors[color]}`}>
+                    <div className="text-gray-500 text-sm font-medium uppercase tracking-wider">{label}</div>
+                    <div className="text-2xl font-bold mt-1 text-gray-800">{value}</div>
+                </div>
+            );
+        };
+
+        const Input = ({ label, ...props }) => (
+            <div>
+                <label className="block text-sm font-medium text-gray-700">{label}</label>
+                <input 
+                    {...props} 
+                    className="mt-1 w-full border border-gray-300 rounded p-2 bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                />
+            </div>
+        );
+
+        const Table = ({ headers, children }) => (
+            <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                    <thead>
+                        <tr className="bg-gray-50 text-gray-600 text-sm uppercase">
+                            {headers.map(h => <th key={h} className="p-3 font-semibold">{h}</th>)}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {children.length > 0 ? children : (
+                            <tr><td colSpan={headers.length} className="p-6 text-center text-gray-400 italic">Nenhum registro encontrado.</td></tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        );
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
