@@ -1,11 +1,10 @@
-import openpyxl as px
+import pandas as pd
 import os
 import pyautogui as pg
 from time import sleep
 
-
 # Bloco base, acessa o site e vai para a aba clientes!
-def base():
+"""def base():
     pg.press('win')
     sleep(5)
     pg.write('Brave')
@@ -23,5 +22,12 @@ def cad_clientes():
     sleep(5)
     pg.press('enter')
 
+
 base()
-cad_clientes()
+cad_clientes()"""
+
+caminho = r'/home/migs/Documentos/estudos/Automacao_Cadastro/data/base_erp_completa.xlsx'
+
+leitor = pd.read_excel(caminho)
+
+print(leitor)
